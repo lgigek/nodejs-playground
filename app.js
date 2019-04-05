@@ -5,6 +5,9 @@ const mongoose = require('./dbs/mongoose');
 // creates app
 const app = express();
 
+// adds a middleware that enables the document from request in req.body
+app.use(express.json());
+
 // adds post's router in app
 app.use('/api/post', post_route);
 
