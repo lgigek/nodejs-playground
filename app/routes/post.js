@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const service = require('../service/post');
+const service = require('../repositories/post');
 
 
 // route that returns all posts
