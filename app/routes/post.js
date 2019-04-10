@@ -7,17 +7,17 @@ router.get('/', async (req, res) => {
     console.log(`HTTP Request to get all posts`);
     let courses = await service.get_all_posts();
 
-    console.log(`Retrieving all posts: ${courses}`);
+    console.log('Retrieving all posts');
     res.status(200).send(courses);
 });
 
 // route that creates a new post
 router.post('/', async (req, res) => {
     let post = req.body;
-    console.log(`HTTP Request to create a new post with data: ${post}`);
+    console.log(`HTTP Request to create a new post with data: ${JSON.stringify(post)}`);
 
     // validates if req.body is valid
-    let {error} = service.validate_request_body(post);
+    let {error} = service.is_a_post(post);
     if (error) {
         // formats the error reason
         let detail = error.details[0].message;
@@ -32,20 +32,21 @@ router.post('/', async (req, res) => {
         });
     }
 
+    // verifies if title is not duplicated
+    if (await service.get_by_title(post.title)) {
+        console.log('Duplicated title, returning 400');
+        return res.status(400).send({message: 'Duplicated post title'});
+    }
+
     // tries to create e new post
     try {
         let result = await service.insert_post(post);
-        console.log(`Successfully created de post`);
-        // success!
-        res.status(200).send(result);
+
+        console.log('Successfully created de post');
+        return res.status(200).send(result);
     } catch (ex) {
-        // verifies if
-        if (ex.name === 'MongoError' && ex.code === 11000) {
-            res.status(400);
-        } else {
-            res.status(500)
-        }
-        res.send({message: ex.message});
+        console.log(`Error caught when trying to add a new post. Error: ${ex}`)
+        return res.status(500).send({message: ex.message});
     }
 
 });

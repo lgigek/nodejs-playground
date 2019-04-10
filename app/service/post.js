@@ -5,6 +5,10 @@ async function get_all_posts() {
     return await Post.find();
 }
 
+async function get_by_title(title) {
+    return await Post.findOne({title: title});
+}
+
 async function insert_post(object) {
     return await Post(object).save();
 }
@@ -19,6 +23,8 @@ function is_a_post(post) {
     return Joi.validate(post, schema);
 }
 
-module.exports.get_all_posts = get_all_posts;
-module.exports.insert_post = insert_post;
-module.exports.validate_request_body = is_a_post;
+module.exports = {
+    get_all_posts,
+    get_by_title,
+    insert_post, is_a_post
+};
