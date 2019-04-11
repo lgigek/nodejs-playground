@@ -9,6 +9,14 @@ async function get_post_by_title(title) {
     return await Post.findOne({title: title});
 }
 
+function get_post_by_id(id) {
+    return new Promise(async (resolve, reject) => {
+        let post = await Post.findById(id);
+        if (post) resolve(post);
+        else reject(post);
+    });
+}
+
 async function insert_post(object) {
     return await Post(object).save();
 }
@@ -30,6 +38,7 @@ function is_id_valid(id) {
 module.exports = {
     get_all_posts,
     get_post_by_title,
+    get_post_by_id,
     insert_post,
     delete_post_by_id,
     update_post_by_id,

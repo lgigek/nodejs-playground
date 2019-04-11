@@ -9,6 +9,23 @@ get_all_posts = async (req, res) => {
     res.status(200).send(posts);
 };
 
+get_post_by_id = async (req, res) => {
+    let id = req.params.id;
+    console.log(`HTTP Request to get post with id: ${id}`);
+
+    if (is_id_invalid(res, id)) return res.end();
+
+    await repository.get_post_by_id(id)
+        .then(post => {
+            console.log('Post found! Returning its content');
+            return res.status(200).send(post);
+        })
+        .catch(() => {
+            console.log('No post found, returning 404');
+            return res.status(404).send({message: 'Post not found'});
+        });
+};
+
 create_post = async (req, res) => {
     let post = req.body;
     console.log(`HTTP Request to create a new post with data: ${JSON.stringify(post)}`);
@@ -63,11 +80,11 @@ update_post = async (req, res) => {
 
     if (is_body_invalid(res, post)) return res.end();
 
-    // verifies if post exists
-    if (!await repository.get_post_by_id(id)) {
-        console.log('No post found, returning 404');
-        return res.status(404).send({message: 'Post not found'})
-    }
+    await repository.get_post_by_id(id)
+        .catch(() => {
+            console.log('No post found, returning 404');
+            return res.status(404).send({message: 'Post not found'});
+        });
 
     if (await is_title_duplicated(res, post.title, id)) return res.end();
 
@@ -136,6 +153,7 @@ is_id_invalid = (res, id) => {
 
 module.exports = {
     get_all_posts,
+    get_post_by_id,
     create_post,
     delete_post,
     update_post
