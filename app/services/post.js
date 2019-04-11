@@ -63,11 +63,18 @@ update_post = async (req, res) => {
 
     if (is_body_invalid(res, post)) return res.end();
 
-    if (await is_title_duplicated(res, post.title)) return res.end();
+    // verifies if post exists
+    if (!await repository.get_post_by_id(id)) {
+        console.log('No post found, returning 404');
+        return res.status(404).send({message: 'Post not found'})
+    }
+
+    if (await is_title_duplicated(res, post.title, id)) return res.end();
 
     // tries to update the post
     try {
         let result = await repository.update_post_by_id(id, post);
+        console.log('Post successfully updated');
         res.status(200).send(result);
     } catch (ex) {
         console.log(`Error caught when trying to update a post. Error: ${ex}`);
@@ -96,12 +103,20 @@ is_body_invalid = (res, body) => {
 };
 
 /*
-    Verifies if the title exists in the database.
+    Verifies if exists a post with same title.
     If exists, returns the request's response with 400.
     If not, returns nothing.
+
+    Also, if "id" is informed, compares it to "_id" from database object
+    If equal, returns nothing.
+    If exists, returns the request's response with 400.
  */
-is_title_duplicated = async (res, title) => {
-    if (await repository.get_post_by_title(title)) {
+is_title_duplicated = async (res, title, id = undefined) => {
+    let post_found = await repository.get_post_by_title(title);
+
+    if (post_found) {
+        if (id && post_found._id.toString() === id) return;
+
         console.log('Duplicated title, returning 400');
         return res.status(400).send({message: 'Duplicated title'});
     }
@@ -117,7 +132,6 @@ is_id_invalid = (res, id) => {
         console.log('Invalid id, returning 400');
         return res.status(400).send({message: 'Invalid id'})
     }
-
 };
 
 module.exports = {
