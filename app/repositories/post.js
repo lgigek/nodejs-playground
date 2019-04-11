@@ -1,12 +1,11 @@
-const Joi = require('joi');
-const Post = require('../models/post');
+const {Post} = require('../models/post');
 const mongoose = require('mongoose');
 
 async function get_all_posts() {
     return await Post.find();
 }
 
-async function get_by_title(title) {
+async function get_post_by_title(title) {
     return await Post.findOne({title: title});
 }
 
@@ -14,18 +13,14 @@ async function insert_post(object) {
     return await Post(object).save();
 }
 
-async function delete_by_id(id) {
+async function delete_post_by_id(id) {
     return await Post.findByIdAndDelete({_id: id});
 }
 
-function is_a_post(post) {
-    let schema = {
-        title: Joi.string().required(),
-        text: Joi.string().required(),
-        created_by: Joi.string().required()
-    };
-
-    return Joi.validate(post, schema);
+async function update_post_by_id(id, post) {
+    return await Post.findByIdAndUpdate(id, {
+        $set: post
+    });
 }
 
 function is_id_valid(id) {
@@ -34,9 +29,9 @@ function is_id_valid(id) {
 
 module.exports = {
     get_all_posts,
-    get_by_title,
+    get_post_by_title,
     insert_post,
-    delete_by_id,
-    is_a_post,
+    delete_post_by_id,
+    update_post_by_id,
     is_id_valid
 };

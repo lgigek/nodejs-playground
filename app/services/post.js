@@ -1,45 +1,29 @@
 const repository = require('../repositories/post');
+const {is_a_post} = require('../models/post');
 
 get_all_posts = async (req, res) => {
     console.log(`HTTP Request to get all posts`);
-    let courses = await repository.get_all_posts();
+    let posts = await repository.get_all_posts();
 
     console.log('Retrieving all posts');
-    res.status(200).send(courses);
+    res.status(200).send(posts);
 };
 
 create_post = async (req, res) => {
     let post = req.body;
     console.log(`HTTP Request to create a new post with data: ${JSON.stringify(post)}`);
 
-    // validates if req.body is valid
-    let {error} = repository.is_a_post(post);
-    if (error) {
-        // formats the error reason
-        let detail = error.details[0].message;
-        detail = detail.replace(/"/g, '\'');
+    if (is_body_invalid(res, post)) return res.end();
 
-        console.log(`Failed to create post. Detail: ${detail}`);
-        return res.status(400).send({
-            message: 'Incorrect params',
-            error_detail: detail
-        });
-    }
-
-    // verifies if title is not duplicated
-    if (await repository.get_by_title(post.title)) {
-        console.log('Duplicated title, returning 400');
-        return res.status(400).send({message: 'Duplicated title'});
-    }
+    if (await is_title_duplicated(res, post.title)) return res.end();
 
     // tries to create e new post
     try {
         let result = await repository.insert_post(post);
-
         console.log('Successfully created de post');
-        return res.status(200).send(result);
+        return res.status(201).send(result);
     } catch (ex) {
-        console.log(`Error caught when trying to add a new post. Error: ${ex}`)
+        console.log(`Error caught when trying to add a new post. Error: ${ex}`);
         return res.status(500).send({message: ex.message});
     }
 
@@ -47,15 +31,19 @@ create_post = async (req, res) => {
 
 delete_post = async (req, res) => {
     let id = req.params.id;
-    console.log(`HTTP Request do delete a post with id: ${id}`);
+    console.log(`HTTP Request to delete a post with id: ${id}`);
 
-    // verifies if id is valid
-    if (!repository.is_id_valid(id)) {
-        console.log('Invalid id, returning 400');
-        return res.status(400).send({message: 'Invalid id'})
+    if (is_id_invalid(res, id)) return res.end();
+
+    let result = undefined;
+    // tries to delete the post
+    try {
+        result = await repository.delete_post_by_id(id);
+    } catch (ex) {
+        console.log(`Error caught when trying to delete a post. Error: ${ex}`);
+        return res.status(500).send({message: ex.message});
     }
 
-    let result = await repository.delete_by_id(id);
     // verifies if post exists
     if (!result) {
         console.log('Post not found, returning 404');
@@ -66,8 +54,75 @@ delete_post = async (req, res) => {
     }
 };
 
+update_post = async (req, res) => {
+    let id = req.params.id;
+    let post = req.body;
+    console.log(`HTTP Request to update a post with id: ${id}, and body: ${JSON.stringify(post)}`);
+
+    if (is_id_invalid(res, id)) return res.end();
+
+    if (is_body_invalid(res, post)) return res.end();
+
+    if (await is_title_duplicated(res, post.title)) return res.end();
+
+    // tries to update the post
+    try {
+        let result = await repository.update_post_by_id(id, post);
+        res.status(200).send(result);
+    } catch (ex) {
+        console.log(`Error caught when trying to update a post. Error: ${ex}`);
+        return res.status(500).send({message: ex.message});
+    }
+};
+
+/*
+    Verifies if body is valid according to JOI schema.
+    If valid, returns nothing.
+    If nothing, returns the request's response with 400
+ */
+is_body_invalid = (res, body) => {
+    let {error} = is_a_post(body);
+    if (error) {
+        // formats the error reason
+        let detail = error.details[0].message;
+        detail = detail.replace(/"/g, '\'');
+
+        console.log('Request body with incorrect params, returning 400');
+        return res.status(400).send({
+            message: 'Incorrect params',
+            error_detail: detail
+        });
+    }
+};
+
+/*
+    Verifies if the title exists in the database.
+    If exists, returns the request's response with 400.
+    If not, returns nothing.
+ */
+is_title_duplicated = async (res, title) => {
+    if (await repository.get_post_by_title(title)) {
+        console.log('Duplicated title, returning 400');
+        return res.status(400).send({message: 'Duplicated title'});
+    }
+};
+
+/*
+    Verifies if id is valid according to mongoose.
+    If valid, returns nothing.
+    If not, returns the request's response with 400.
+ */
+is_id_invalid = (res, id) => {
+    if (!repository.is_id_valid(id)) {
+        console.log('Invalid id, returning 400');
+        return res.status(400).send({message: 'Invalid id'})
+    }
+
+};
+
 module.exports = {
     get_all_posts,
     create_post,
-    delete_post
+    delete_post,
+    update_post
 };

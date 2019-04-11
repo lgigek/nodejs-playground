@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const Joi = require('joi');
 
 // creates schema for comments
 const comment_schema = new mongoose.Schema({
@@ -44,4 +45,17 @@ const post_schema = new mongoose.Schema({
 // creates model for posts
 const Post = mongoose.model('Post', post_schema);
 
-module.exports = Post;
+is_a_post = (post) => {
+    let schema = {
+        title: Joi.string().required(),
+        text: Joi.string().required(),
+        created_by: Joi.string().required()
+    };
+
+    return Joi.validate(post, schema);
+};
+
+module.exports = {
+    Post,
+    is_a_post
+};
