@@ -9,12 +9,8 @@ async function get_post_by_title(title) {
     return await Post.findOne({title: title});
 }
 
-function get_post_by_id(id) {
-    return new Promise(async (resolve, reject) => {
-        let post = await Post.findById(id);
-        if (post) resolve(post);
-        else reject(post);
-    });
+async function get_post_by_id(id) {
+    return await Post.findById(id);
 }
 
 async function insert_post(object) {
@@ -22,11 +18,11 @@ async function insert_post(object) {
 }
 
 async function delete_post_by_id(id) {
-    return await Post.findByIdAndDelete({_id: id});
+    return await Post.findOneAndDelete({_id: id});
 }
 
 async function update_post_by_id(id, post) {
-    return await Post.findByIdAndUpdate(id, {
+    return await Post.findOneAndUpdate({_id: id}, {
         $set: post
     });
 }
