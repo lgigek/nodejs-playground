@@ -4,9 +4,15 @@ const Response = require('./responses');
 
 get_all_posts = async (req, res) => {
     console.log(`HTTP Request to get all posts`);
-    let posts = await repository.get_all_posts();
 
-    return Response.all_posts(res, posts);
+    // tries to get all posts
+    try {
+        let posts = await repository.get_all_posts();
+        return Response.all_posts(res, posts);
+    } catch (err) {
+        return Response.generic_error(res, err);
+    }
+
 };
 
 get_post_by_id = async (req, res) => {
@@ -15,7 +21,16 @@ get_post_by_id = async (req, res) => {
 
     if (is_id_invalid(res, id)) return;
 
-    let result = await repository.get_post_by_id(id);
+    let result = undefined;
+
+    // tries to get a post by its id
+    try {
+        result = await repository.get_post_by_id(id);
+    } catch (err) {
+        return Response.generic_error(res, err);
+    }
+
+    // verify if post exists
     if (result)
         return Response.post_found(res, result);
     else
@@ -71,7 +86,15 @@ update_post = async (req, res) => {
 
     if (is_body_invalid(res, post)) return;
 
-    let post_by_id = await repository.get_post_by_id(id);
+    let post_by_id = undefined;
+    // tries to get the post by its id
+    try {
+        post_by_id = await repository.get_post_by_id(id);
+    } catch (err) {
+        return Response.generic_error(res, err);
+    }
+
+    // verifies if post was found
     if (!post_by_id)
         return Response.post_not_found(res);
 
